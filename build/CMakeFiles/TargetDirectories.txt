@@ -1,0 +1,3 @@
+C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/build/CMakeFiles/twinRacer.dir
+C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/build/CMakeFiles/ZERO_CHECK.dir
