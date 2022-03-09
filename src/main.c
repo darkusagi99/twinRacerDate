@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "pd_api.h"
 
@@ -17,13 +18,15 @@ LCDFont* font = NULL;
 
 #define POLY_PTS 4
 #define ROAD_LENGTH 1600
+#define CAR_SPEED 100
+#define CAR_STRAFE 20
 
 int width = 400;
 int height = 240;
 
 int roadW = 800;
 int segL = 200;
-float camD = 0.84;
+float camD = 0.84f;
 
 struct Line {
 	float x, y, z; // center of line
@@ -68,10 +71,12 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 
 // Projection world to screen
 void projectionLine(struct Line* line , int camX, int camY, int camZ) {
-	line->scale = camD / (line->z - camZ);
-	line->X = (1 + line->scale * (line->x - camX)) * width / 2;
-	line->Y = (1 - line->scale * (line->y - camY)) * height / 2;
-	line->W = line->scale * roadW * width / 2;
+
+	line->scale = fabs(camD / (line->z - camZ));
+	if (isinf(line->scale)) { line->scale = 1; }
+	line->X = fabs((1 + line->scale * (line->x - camX)) * width / 2);
+	line->Y = fabs((1 - line->scale * (line->y - camY)) * height / 2);
+	line->W = fabs(line->scale * roadW * width / 2);
 
 }
 
@@ -122,6 +127,10 @@ PDButtons pushedBtn;
 PDButtons releasedBtn;
 PDButtons currentBtn;
 
+// Line infos
+struct Line* currLine;
+struct Line* prevLine;
+
 
 static int update(void* userdata)
 {
@@ -135,26 +144,28 @@ static int update(void* userdata)
 	if (releasedBtn & kButtonA) { driving = 0; }
 
 	// Left / right
-	if (currentBtn & kButtonLeft) { posX += 10; }
-	if (currentBtn & kButtonRight) { posX -= 10; }
+	if (currentBtn & kButtonLeft) { posX -= CAR_STRAFE; }
+	if (currentBtn & kButtonRight) { posX += CAR_STRAFE; }
 
 	// Make the car go forward
-	if (driving) { posZ += 15; }
+	if (driving) { posZ += CAR_SPEED; }
 	
 	pd->graphics->clear(kColorWhite);
 
 	int startPos = posZ / segL;
 
 	// Draw road
-	for (int j = posZ; j < 300 + posZ; j++) {
+	prevLine = &road[(startPos - 1) % ROAD_LENGTH];
+	projectionLine(prevLine, posX, 1200, posZ);
+
+	for (int j = startPos; j < 87 + startPos; j++) {
 	
 		// Get line
-		struct Line currLine = road[j % ROAD_LENGTH];
-		struct Line prevLine = road[(j-1) % ROAD_LENGTH];
+		currLine = &road[j % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		projectionLine(&prevLine, posX, 1200, posZ);
-		projectionLine(&currLine, posX, 1200, posZ);
+		//projectionLine(&prevLine, posX, 1200, posZ);
+		projectionLine(currLine, posX, 1200, posZ);
 
 		// Choose line color
 		if ((j / 3) % 2) {
@@ -170,14 +181,15 @@ static int update(void* userdata)
 
 		// Draw road part
 		// Grass element
-		drawWedge(pd, grassColor, 0, prevLine.Y, width, 0, currLine.Y, width);
+		drawWedge(pd, grassColor, 0, prevLine->Y, width, 0, currLine->Y, width);
 
 		// Rumble element
-		drawWedge(pd, rumbleColor, prevLine.X, prevLine.Y, prevLine.W * 1.2, currLine.X, currLine.Y, currLine.W * 1.2);
+		drawWedge(pd, rumbleColor, prevLine->X, prevLine->Y, prevLine->W * 1.2, currLine->X, currLine->Y, currLine->W * 1.2);
 
 		// Road Element
-		drawWedge(pd, roadColor, prevLine.X, prevLine.Y, prevLine.W, currLine.X, currLine.Y, currLine.W);
+		drawWedge(pd, roadColor, prevLine->X, prevLine->Y, prevLine->W, currLine->X, currLine->Y, currLine->W);
 
+		prevLine = currLine;
 
 	}
 
