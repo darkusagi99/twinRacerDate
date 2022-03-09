@@ -15,16 +15,8 @@ static int update(void* userdata);
 const char* fontpath = "/System/Fonts/Asheville-Sans-14-Bold.pft";
 LCDFont* font = NULL;
 
-#define TEXT_WIDTH 86
-#define TEXT_HEIGHT 16
-
 #define POLY_PTS 4
 #define ROAD_LENGTH 1600
-
-int x = (400 - TEXT_WIDTH) / 2;
-int y = (240 - TEXT_HEIGHT) / 2;
-int dx = 1;
-int dy = 2;
 
 int width = 400;
 int height = 240;
@@ -87,12 +79,18 @@ void projectionLine(struct Line* line , int camX, int camY, int camZ) {
 // Global var for coordinates
 int coords[8];
 
-LCDColor grassLight = kColorWhite;
-LCDColor grassDark = kColorWhite;
-LCDColor rumbleLight = kColorBlack;
-LCDColor rumbleDark = kColorBlack;
-LCDColor roadLight = kColorBlack;
-LCDColor roadDark = kColorBlack;
+// "Colors" definitions
+LCDPattern grassLight = {255, 255, 255, 255, 222, 255, 255, 255, 
+						255, 255, 255, 255, 255, 255, 255, 255};
+LCDPattern grassDark = { 254, 255, 222, 255, 255, 255, 255, 255, 
+						255, 255, 255, 255, 255, 255, 255, 255 };
+LCDColor rumbleLight = kColorWhite;
+LCDPattern rumbleDark = { 40, 18, 37, 64, 128, 12, 64, 32,
+						255, 255, 255, 255, 255, 255, 255, 255 };
+LCDPattern roadLight = { 16, 0, 128, 0, 0, 64, 0, 32,
+						255, 255, 255, 255, 255, 255, 255, 255 };
+LCDPattern roadDark = { 0, 0, 0, 0, 0, 0, 0, 0,
+						255, 255, 255, 255, 255, 255, 255, 255 };
 
 
 LCDColor grassColor;
@@ -114,27 +112,52 @@ void drawWedge(PlaydateAPI* pd, LCDColor color, int x1, int y1, int w1, int x2, 
 
 }
 
-char debugLine[200];
+// Car Z position
+int posZ = 0;
+int posX = 0;
+int driving = 0;
+
+// Button states
+PDButtons pushedBtn;
+PDButtons releasedBtn;
+PDButtons currentBtn;
+
 
 static int update(void* userdata)
 {
 	PlaydateAPI* pd = userdata;
+
+	// Read input
+	pd->system->getButtonState(&currentBtn, &pushedBtn, &releasedBtn);
+
+	// Read A button
+	if (pushedBtn & kButtonA) { driving = 1; }
+	if (releasedBtn & kButtonA) { driving = 0; }
+
+	// Left / right
+	if (currentBtn & kButtonLeft) { posX += 10; }
+	if (currentBtn & kButtonRight) { posX -= 10; }
+
+	// Make the car go forward
+	if (driving) { posZ += 15; }
 	
 	pd->graphics->clear(kColorWhite);
 
+	int startPos = posZ / segL;
+
 	// Draw road
-	for (int i = 0; i < 30; i++) {
+	for (int j = posZ; j < 300 + posZ; j++) {
 	
 		// Get line
-		struct Line currLine = road[i % ROAD_LENGTH];
-		struct Line prevLine = road[(i-1) % ROAD_LENGTH];
+		struct Line currLine = road[j % ROAD_LENGTH];
+		struct Line prevLine = road[(j-1) % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		projectionLine(&prevLine, 0, 1200, 0);
-		projectionLine(&currLine, 0, 1200, 0);
+		projectionLine(&prevLine, posX, 1200, posZ);
+		projectionLine(&currLine, posX, 1200, posZ);
 
 		// Choose line color
-		if ((i / 3) % 2) {
+		if ((j / 3) % 2) {
 			grassColor = grassLight;
 			rumbleColor = rumbleLight;
 			roadColor = roadLight;
@@ -153,7 +176,7 @@ static int update(void* userdata)
 		drawWedge(pd, rumbleColor, prevLine.X, prevLine.Y, prevLine.W * 1.2, currLine.X, currLine.Y, currLine.W * 1.2);
 
 		// Road Element
-		drawWedge(pd, kColorBlack, prevLine.X, prevLine.Y, prevLine.W, currLine.X, currLine.Y, currLine.W);
+		drawWedge(pd, roadColor, prevLine.X, prevLine.Y, prevLine.W, currLine.X, currLine.Y, currLine.W);
 
 
 	}
