@@ -18,7 +18,7 @@ LCDFont* font = NULL;
 
 #define POLY_PTS 4
 #define ROAD_LENGTH 1600
-#define CAR_SPEED 100
+#define CAR_SPEED 250
 #define CAR_STRAFE 20
 
 int width = 400;
@@ -35,6 +35,20 @@ struct Line {
 };
 
 struct Line road[ROAD_LENGTH];
+
+// Design infos
+LCDBitmap* decorBitmap;
+
+// Bitmap loader
+LCDBitmap* loadImageAtPath(const char* path, PlaydateAPI* pd)
+{
+	const char* outErr = NULL;
+	LCDBitmap* img = pd->graphics->loadBitmap(path, &outErr);
+	if (outErr != NULL) {
+		pd->system->logToConsole("Error loading image at path '%s': %s", path, outErr);
+	}
+	return img;
+}
 
 #ifdef _WINDLL
 __declspec(dllexport)
@@ -59,6 +73,9 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			road[i].z = i * segL;
 
 		}
+
+		// Load graphics
+		decorBitmap = loadImageAtPath("image/decor.png", pd);
 
 		// Note: If you set an update callback in the kEventInit handler, the system assumes the game is pure C and doesn't run any Lua code in the game
 		pd->system->setUpdateCallback(update, pd);
@@ -132,6 +149,7 @@ struct Line* currLine;
 struct Line* prevLine;
 
 
+
 static int update(void* userdata)
 {
 	PlaydateAPI* pd = userdata;
@@ -153,6 +171,9 @@ static int update(void* userdata)
 	pd->graphics->clear(kColorWhite);
 
 	int startPos = posZ / segL;
+
+	// Draw decor
+	pd->graphics->drawBitmap(decorBitmap, posX/200, 0, kBitmapUnflipped);
 
 	// Draw road
 	prevLine = &road[(startPos - 1) % ROAD_LENGTH];
