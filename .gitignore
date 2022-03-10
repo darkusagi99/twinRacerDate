@@ -364,3 +364,5 @@ FodyWeavers.xsd
 *.bin
 *.dll
 /twinRacer.pdx/pdxinfo
+/twinRacer.pdx/image/decor.pdi
+/twinRacer.pdx/image/sky.pdi

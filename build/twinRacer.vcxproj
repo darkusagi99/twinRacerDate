@@ -67,7 +67,8 @@
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <SuppressStartupBanner></SuppressStartupBanner>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;TARGET_SIMULATOR=1;_WINDLL=1;TARGET_EXTENSION=1;CMAKE_INTDIR="Debug";twinRacer_EXPORTS</PreprocessorDefinitions>
@@ -86,7 +87,8 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>		</Message>
+      <Message>
+      </Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/build/Debug/twinRacer.dll C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/Source/pdex.dll
 if %errorlevel% neq 0 goto :cmEnd
@@ -140,7 +142,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <SuppressStartupBanner></SuppressStartupBanner>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;TARGET_SIMULATOR=1;_WINDLL=1;TARGET_EXTENSION=1;CMAKE_INTDIR="Release";twinRacer_EXPORTS</PreprocessorDefinitions>
@@ -161,7 +164,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PostBuildEvent>
-      <Message>		</Message>
+      <Message>
+      </Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E copy C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/build/Release/twinRacer.dll C:/Users/darku/Documents/PlaydateSDK/C_API/Examples/TwinRacer/Source/pdex.dll
 if %errorlevel% neq 0 goto :cmEnd
@@ -245,6 +249,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\src\decor.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

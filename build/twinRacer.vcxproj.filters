@@ -13,4 +13,9 @@
       <UniqueIdentifier>{4FA5487C-B24C-3057-A62D-E28BD4A4C337}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\src\decor.png">
+      <Filter>Source Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
