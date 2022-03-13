@@ -74,6 +74,12 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			road[i].z = i * segL;
 			road[i].scale = 1;
 
+			// Ligne droite par défaut
+			road[i].curve = 0;
+
+			// Définition d'un virage
+			if (i > 400 && i < 800) { road[i].curve = 1; }
+
 			road[i].X = 200;
 			road[i].Y = 240;
 
@@ -177,6 +183,8 @@ static int update(void* userdata)
 
 	int startPos = posZ / segL;
 	int prevPos = (ROAD_LENGTH + startPos - 1) % ROAD_LENGTH;
+	float x = 0; // Curve element
+	float dx = 0; // Delta for curve
 
 	// Draw decor
 	pd->graphics->drawBitmap(decorBitmap, posX/200, 0, kBitmapUnflipped);
@@ -191,7 +199,9 @@ static int update(void* userdata)
 		currLine = &road[j % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		projectionLine(currLine, posX, 1200, posZ);
+		projectionLine(currLine, posX - x, 1200, posZ);
+		x += dx;
+		dx += currLine->curve;
 
 		// Choose line color
 		if ((j / 3) % 2) {
