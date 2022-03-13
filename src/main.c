@@ -20,6 +20,7 @@ LCDFont* font = NULL;
 #define ROAD_LENGTH 1600
 #define CAR_SPEED 250
 #define CAR_STRAFE 20
+#define BASE_HEIGHT 1200
 
 int width = 400;
 int height = 240;
@@ -79,6 +80,11 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 
 			// Définition d'un virage
 			if (i > 400 && i < 800) { road[i].curve = 1; }
+
+			// Up and down road position
+			if (i > 1300) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
+			pd->system->logToConsole("roadY : % f", road[i].y);
+
 
 			road[i].X = 200;
 			road[i].Y = 240;
@@ -159,6 +165,8 @@ PDButtons currentBtn;
 struct Line* currLine;
 struct Line* prevLine;
 
+// Height of camera
+int camH = BASE_HEIGHT;
 
 
 static int update(void* userdata)
@@ -181,7 +189,8 @@ static int update(void* userdata)
 	
 	pd->graphics->clear(kColorWhite);
 
-	int startPos = posZ / segL;
+	int startPos = (posZ / segL) % ROAD_LENGTH;
+	pd->system->logToConsole("startPos = %d", startPos);
 	int prevPos = (ROAD_LENGTH + startPos - 1) % ROAD_LENGTH;
 	float x = 0; // Curve element
 	float dx = 0; // Delta for curve
@@ -191,7 +200,16 @@ static int update(void* userdata)
 
 	// Draw road
 	prevLine = &road[prevPos];
-	projectionLine(prevLine, posX, 1200, posZ);
+	projectionLine(prevLine, posX, camH, posZ);
+
+
+	currLine = &road[startPos];
+	projectionLine(currLine, posX - x, camH, posZ);
+
+	// Camera Height
+	camH = BASE_HEIGHT + currLine->y;
+	int maxY = height;
+
 
 	for (int j = startPos; j < 87 + startPos; j++) {
 
@@ -199,9 +217,13 @@ static int update(void* userdata)
 		currLine = &road[j % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		projectionLine(currLine, posX - x, 1200, posZ);
+		projectionLine(currLine, posX - x, camH, posZ);
 		x += dx;
 		dx += currLine->curve;
+
+		// Ignore "Too high lines"
+		if (currLine->Y >= maxY) { continue; }
+		maxY = currLine->Y;
 
 		// Choose line color
 		if ((j / 3) % 2) {
