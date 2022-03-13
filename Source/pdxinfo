@@ -1,0 +1,5 @@
+name=Twin Racer
+author=Darkusagi99
+description=A C Playdate Car game
+bundleID=com.github.com.darkusagi99.twinRacerDate
+imagePath=card/

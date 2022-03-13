@@ -206,6 +206,7 @@ static int update(void* userdata)
 	float dx = 0; // Delta for curve
 
 	// Draw decor
+	pd->graphics->setDrawMode(kDrawModeCopy);
 	pd->graphics->drawBitmap(decorBitmap, posX/200, 0, kBitmapUnflipped);
 
 	// Draw road
