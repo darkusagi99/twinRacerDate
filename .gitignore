@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /twinRacer.pdx/pdxinfo
 /twinRacer.pdx/image/decor.pdi
 /twinRacer.pdx/image/sky.pdi
+*.pdi

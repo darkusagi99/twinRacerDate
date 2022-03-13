@@ -34,12 +34,19 @@ struct Line {
 	float X, Y, W; // Screen coordinates
 	float scale; // Size of road part displayed
 	float curve; // curve of the road
+	float spritePos; // Position of the sprite
+	float spriteClip; // Clipping of the sprite
+	LCDBitmap* spriteLine;
+
+	// 2.35
 };
 
 struct Line road[ROAD_LENGTH];
 
 // Design infos
 LCDBitmap* decorBitmap;
+LCDBitmap* carBitmap;
+LCDBitmap* car2Bitmap;
 
 // Bitmap loader
 LCDBitmap* loadImageAtPath(const char* path, PlaydateAPI* pd)
@@ -92,6 +99,8 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 
 		// Load graphics
 		decorBitmap = loadImageAtPath("image/decor.png", pd);
+		carBitmap = loadImageAtPath("image/car.png", pd);
+		car2Bitmap = loadImageAtPath("image/car2.png", pd);
 
 		// Note: If you set an update callback in the kEventInit handler, the system assumes the game is pure C and doesn't run any Lua code in the game
 		pd->system->setUpdateCallback(update, pd);
@@ -252,7 +261,14 @@ static int update(void* userdata)
 
 	}
 
+	// Draw the car
+	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
+	pd->graphics->drawBitmap(carBitmap, 160, 154, kBitmapUnflipped);
+
+	pd->graphics->setDrawMode(kDrawModeBlackTransparent);
+	pd->graphics->drawBitmap(car2Bitmap, 160, 154, kBitmapUnflipped);
         
+	// Draw FPS
 	pd->system->drawFPS(0,0);
 
 	return 1;
