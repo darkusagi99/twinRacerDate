@@ -83,7 +83,6 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 
 			// Up and down road position
 			if (i > 1300) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
-			pd->system->logToConsole("roadY : % f", road[i].y);
 
 
 			road[i].X = 200;
@@ -189,8 +188,10 @@ static int update(void* userdata)
 	
 	pd->graphics->clear(kColorWhite);
 
-	int startPos = (posZ / segL) % ROAD_LENGTH;
-	pd->system->logToConsole("startPos = %d", startPos);
+	while (posZ >= ROAD_LENGTH * segL) { posZ -= ROAD_LENGTH * segL; }
+	while (posZ < 0) { posZ += ROAD_LENGTH * segL; }
+
+	int startPos = posZ / segL;
 	int prevPos = (ROAD_LENGTH + startPos - 1) % ROAD_LENGTH;
 	float x = 0; // Curve element
 	float dx = 0; // Delta for curve
