@@ -31,7 +31,8 @@ float camD = 0.84f;
 struct Line {
 	float x, y, z; // center of line
 	float X, Y, W; // Screen coordinates
-	float scale;
+	float scale; // Size of road part displayed
+	float curve; // curve of the road
 };
 
 struct Line road[ROAD_LENGTH];
@@ -71,6 +72,10 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			road[i].x = 0;
 			road[i].y = 0;
 			road[i].z = i * segL;
+			road[i].scale = 1;
+
+			road[i].X = 200;
+			road[i].Y = 240;
 
 		}
 
@@ -91,9 +96,9 @@ void projectionLine(struct Line* line , int camX, int camY, int camZ) {
 
 	line->scale = fabs(camD / (line->z - camZ));
 	if (isinf(line->scale)) { line->scale = 1; }
-	line->X = fabs((1 + line->scale * (line->x - camX)) * width / 2);
-	line->Y = fabs((1 - line->scale * (line->y - camY)) * height / 2);
-	line->W = fabs(line->scale * roadW * width / 2);
+	line->X = (1 + line->scale * (line->x - camX)) * width / 2;
+	line->Y = (1 - line->scale * (line->y - camY)) * height / 2;
+	line->W = line->scale * roadW * width / 2;
 
 }
 
@@ -171,21 +176,21 @@ static int update(void* userdata)
 	pd->graphics->clear(kColorWhite);
 
 	int startPos = posZ / segL;
+	int prevPos = (ROAD_LENGTH + startPos - 1) % ROAD_LENGTH;
 
 	// Draw decor
 	pd->graphics->drawBitmap(decorBitmap, posX/200, 0, kBitmapUnflipped);
 
 	// Draw road
-	prevLine = &road[(startPos - 1) % ROAD_LENGTH];
+	prevLine = &road[prevPos];
 	projectionLine(prevLine, posX, 1200, posZ);
 
 	for (int j = startPos; j < 87 + startPos; j++) {
-	
+
 		// Get line
 		currLine = &road[j % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		//projectionLine(&prevLine, posX, 1200, posZ);
 		projectionLine(currLine, posX, 1200, posZ);
 
 		// Choose line color
