@@ -36,9 +36,8 @@ struct Line {
 	float curve; // curve of the road
 	float spritePos; // Position of the sprite
 	float spriteClip; // Clipping of the sprite
-	LCDBitmap* spriteLine;
+	LCDBitmap* spriteLine; // Sprite of the tree - At line level in order to allo different
 
-	// 2.35
 };
 
 struct Line road[ROAD_LENGTH];
@@ -47,6 +46,7 @@ struct Line road[ROAD_LENGTH];
 LCDBitmap* decorBitmap;
 LCDBitmap* carBitmap;
 LCDBitmap* car2Bitmap;
+LCDBitmap* palmBitmap;
 
 // Bitmap loader
 LCDBitmap* loadImageAtPath(const char* path, PlaydateAPI* pd)
@@ -74,6 +74,13 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 		if ( font == NULL )
 			pd->system->error("%s:%i Couldn't load font %s: %s", __FILE__, __LINE__, fontpath, err);
 
+
+		// Load graphics
+		decorBitmap = loadImageAtPath("image/decor.png", pd);
+		carBitmap = loadImageAtPath("image/car.png", pd);
+		car2Bitmap = loadImageAtPath("image/car2.png", pd);
+		palmBitmap = loadImageAtPath("image/palm.png", pd);
+
 		// Init road Data
 		for (int i = 0; i < ROAD_LENGTH; i++) {
 
@@ -91,16 +98,21 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			// Up and down road position
 			if (i > 1300) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
 
+			// Add sprite data
+			road[i].spritePos = 0;
+			road[i].spriteLine = NULL;
+
+			// Tree on the
+			if (i % 20 == 0) {
+				road[i].spritePos = -1.5;
+				road[i].spriteLine = palmBitmap;
+			}
 
 			road[i].X = 200;
 			road[i].Y = 240;
 
 		}
 
-		// Load graphics
-		decorBitmap = loadImageAtPath("image/decor.png", pd);
-		carBitmap = loadImageAtPath("image/car.png", pd);
-		car2Bitmap = loadImageAtPath("image/car2.png", pd);
 
 		// Note: If you set an update callback in the kEventInit handler, the system assumes the game is pure C and doesn't run any Lua code in the game
 		pd->system->setUpdateCallback(update, pd);
@@ -156,6 +168,42 @@ void drawWedge(PlaydateAPI* pd, LCDColor color, int x1, int y1, int w1, int x2, 
 	coords[7] = y2;
 
 	pd->graphics->fillPolygon(POLY_PTS, coords, color, kPolygonFillNonZero);
+
+}
+
+void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
+
+
+	// Pas d'affichage, on sort
+	if (currLine->spriteLine == NULL) { return; }
+
+	// Hardcoded sprite size
+	int w = 84;
+	int h = 135;
+
+	float destX = currLine->X + currLine->scale * currLine->spritePos * width / 2;
+	float destY = currLine->Y + 4;
+	float destW = w * currLine->W / 30;
+	float destH = h * currLine->W / 30;
+
+	destX += destW * currLine->spritePos;
+	destY += destH * (- 1);
+
+
+	float clipH = destY + destH - currLine->spriteClip;
+
+	if (clipH < 0) { clipH = 0; }
+
+	// Pas d'affichage, on sort
+	//if (clipH >= destH) { return; }
+
+
+	// Draw sprite
+	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
+	float xscale = destW / w;
+	float yscale = destH / h;
+	pd->graphics->drawScaledBitmap(currLine->spriteLine, destX, destY, destW / w, destH / h);
+
 
 }
 
@@ -222,7 +270,7 @@ static int update(void* userdata)
 	int maxY = height;
 
 
-	for (int j = startPos; j < 87 + startPos; j++) {
+	for (int j = startPos; j < 200 + startPos; j++) {
 
 		// Get line
 		currLine = &road[j % ROAD_LENGTH];
@@ -233,7 +281,6 @@ static int update(void* userdata)
 		dx += currLine->curve;
 
 		// Ignore "Too high lines"
-		if (currLine->Y >= maxY) { continue; }
 		maxY = currLine->Y;
 
 		// Choose line color
@@ -257,6 +304,9 @@ static int update(void* userdata)
 
 		// Road Element
 		drawWedge(pd, roadColor, prevLine->X, prevLine->Y, prevLine->W, currLine->X, currLine->Y, currLine->W);
+
+		// Draw sprite (if exists)
+		drawSprite(pd, currLine);
 
 		prevLine = currLine;
 
