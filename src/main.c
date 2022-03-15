@@ -46,6 +46,13 @@ struct Line road[ROAD_LENGTH];
 LCDBitmap* decorBitmap;
 LCDBitmap* carBitmap;
 LCDBitmap* car2Bitmap;
+LCDBitmap* carLeftBitmap;
+LCDBitmap* carLeft2Bitmap;
+LCDBitmap* carRightBitmap;
+LCDBitmap* carRight2Bitmap;
+
+LCDBitmap* carDisplayBitmap;
+LCDBitmap* carDisplay2Bitmap;
 LCDBitmap* palmBitmap;
 
 // Bitmap loader
@@ -79,7 +86,15 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 		decorBitmap = loadImageAtPath("image/decor.png", pd);
 		carBitmap = loadImageAtPath("image/car.png", pd);
 		car2Bitmap = loadImageAtPath("image/car2.png", pd);
+		carLeftBitmap = loadImageAtPath("image/carLeft.png", pd);
+		carLeft2Bitmap = loadImageAtPath("image/carLeft2.png", pd);
+		carRightBitmap = loadImageAtPath("image/carRight.png", pd);
+		carRight2Bitmap = loadImageAtPath("image/carRight2.png", pd);
 		palmBitmap = loadImageAtPath("image/palm.png", pd);
+
+
+		carDisplayBitmap = carBitmap;
+		carDisplay2Bitmap = car2Bitmap;
 
 		// Init road Data
 		for (int i = 0; i < ROAD_LENGTH; i++) {
@@ -237,8 +252,24 @@ static int update(void* userdata)
 	if (releasedBtn & kButtonA) { driving = 0; }
 
 	// Left / right
-	if (currentBtn & kButtonLeft) { posX -= CAR_STRAFE; }
-	if (currentBtn & kButtonRight) { posX += CAR_STRAFE; }
+	if (currentBtn & kButtonLeft) { 
+		posX -= CAR_STRAFE; 
+
+		carDisplayBitmap = carLeftBitmap;
+		carDisplay2Bitmap = carLeft2Bitmap;
+	}
+	if (currentBtn & kButtonRight) { 
+		posX += CAR_STRAFE;
+
+		carDisplayBitmap = carRightBitmap;
+		carDisplay2Bitmap = carRight2Bitmap;
+	}
+
+
+	if ((releasedBtn & kButtonRight) || (releasedBtn & kButtonLeft)) {
+		carDisplayBitmap = carBitmap;
+		carDisplay2Bitmap = car2Bitmap;
+	}
 
 	// Make the car go forward
 	if (driving) { posZ += CAR_SPEED; }
@@ -269,11 +300,12 @@ static int update(void* userdata)
 	camH = BASE_HEIGHT + currLine->y;
 	int maxY = height;
 
-
+	//pd->system->logToConsole("RoadLoop : %d, %d, %d", startPos, 200 + startPos, (200 + startPos) % ROAD_LENGTH);
 	for (int j = startPos; j < 200 + startPos; j++) {
 
 		// Get line
 		currLine = &road[j % ROAD_LENGTH];
+		//pd->system->logToConsole("RoadLoopCurrent : %d, %d", j, j % ROAD_LENGTH);
 
 		// Calculate screen coordinates
 		projectionLine(currLine, posX - x, camH, posZ);
@@ -314,10 +346,10 @@ static int update(void* userdata)
 
 	// Draw the car
 	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
-	pd->graphics->drawBitmap(carBitmap, 160, 154, kBitmapUnflipped);
+	pd->graphics->drawBitmap(carDisplayBitmap, 160, 154, kBitmapUnflipped);
 
 	pd->graphics->setDrawMode(kDrawModeBlackTransparent);
-	pd->graphics->drawBitmap(car2Bitmap, 160, 154, kBitmapUnflipped);
+	pd->graphics->drawBitmap(carDisplay2Bitmap, 160, 154, kBitmapUnflipped);
         
 	// Draw FPS
 	pd->system->drawFPS(0,0);
