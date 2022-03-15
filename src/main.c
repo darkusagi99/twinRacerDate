@@ -37,7 +37,6 @@ struct Line {
 	float scale; // Size of road part displayed
 	float curve; // curve of the road
 	float spritePos; // Position of the sprite
-	float spriteClip; // Clipping of the sprite
 	LCDBitmap* spriteLine; // Sprite of the tree - At line level in order to allo different
 
 };
@@ -113,7 +112,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			if (i > 400 && i < 800) { road[i].curve = 1; }
 
 			// Up and down road position
-			if (i > 1300) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
+			if (i > 950) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
 
 			// Add sprite data
 			road[i].spritePos = 0;
@@ -144,7 +143,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 void projectionLine(struct Line* line , int camX, int camY, int camZ) {
 
 	float zTmp;
-	if(line->z < camZ) {
+	if(line->z + 1000 < camZ) {
 		zTmp = ROAD_SIZE + line->z - camZ;
 	}
 	else {
@@ -213,15 +212,6 @@ void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
 
 	destX += destW * currLine->spritePos;
 	destY += destH * (- 1);
-
-
-	float clipH = destY + destH - currLine->spriteClip;
-
-	if (clipH < 0) { clipH = 0; }
-
-	// Pas d'affichage, on sort
-	//if (clipH >= destH) { return; }
-
 
 	// Draw sprite
 	pd->graphics->setDrawMode(kDrawModeNXOR);
@@ -307,14 +297,14 @@ static int update(void* userdata)
 
 	// Camera Height
 	camH = BASE_HEIGHT + currLine->y;
-	int maxY = height;
+	float maxY = height*2;
+
 
 	//pd->system->logToConsole("RoadLoop : %d, %d, %d", startPos, 200 + startPos, (200 + startPos) % ROAD_LENGTH);
 	for (int j = startPos; j < 200 + startPos; j++) {
 
 		// Get line
 		currLine = &road[j % ROAD_LENGTH];
-		//pd->system->logToConsole("RoadLoopCurrent : %d, %d", j, j % ROAD_LENGTH);
 
 		// Calculate screen coordinates
 		projectionLine(currLine, posX - x, camH, posZ);
@@ -322,6 +312,7 @@ static int update(void* userdata)
 		dx += currLine->curve;
 
 		// Ignore "Too high lines"
+		if (currLine->Y >= maxY) { continue; }
 		maxY = currLine->Y;
 
 		// Choose line color
