@@ -112,7 +112,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			if (i > 400 && i < 800) { road[i].curve = 1; }
 
 			// Up and down road position
-			if (i > 950) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
+			if (i > 940) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
 
 			// Add sprite data
 			road[i].spritePos = 0;
@@ -206,7 +206,7 @@ void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
 	int h = 135;
 
 	float destX = currLine->X + currLine->scale * currLine->spritePos * width / 2;
-	float destY = currLine->Y + 4;
+	float destY = currLine->Y;
 	float destW = w * currLine->W / 30;
 	float destH = h * currLine->W / 30;
 
@@ -214,7 +214,7 @@ void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
 	destY += destH * (- 1);
 
 	// Draw sprite
-	pd->graphics->setDrawMode(kDrawModeNXOR);
+	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
 	float xscale = destW / w;
 	float yscale = destH / h;
 	pd->graphics->drawScaledBitmap(currLine->spriteLine, destX, destY, destW / w, destH / h);
@@ -300,7 +300,7 @@ static int update(void* userdata)
 	float maxY = height*2;
 
 
-	//pd->system->logToConsole("RoadLoop : %d, %d, %d", startPos, 200 + startPos, (200 + startPos) % ROAD_LENGTH);
+	// Calculate line coordinates
 	for (int j = startPos; j < 200 + startPos; j++) {
 
 		// Get line
@@ -310,6 +310,32 @@ static int update(void* userdata)
 		projectionLine(currLine, posX - x, camH, posZ);
 		x += dx;
 		dx += currLine->curve;
+
+		prevLine = currLine;
+
+	}
+
+	// Draw the palm in separate loop (overlap - First pass)
+	for (int j = startPos; j < 200 + startPos; j++) {
+
+		// Get line
+		currLine = &road[j % ROAD_LENGTH];
+
+		// Draw sprite (if exists)
+		drawSprite(pd, currLine);
+
+		prevLine = currLine;
+
+	}
+
+	// Reset loop vars
+	prevLine = &road[prevPos];
+	maxY = height * 2;
+	// Draw road
+	for (int j = startPos; j < 200 + startPos; j++) {
+
+		// Get line
+		currLine = &road[j % ROAD_LENGTH];
 
 		// Ignore "Too high lines"
 		if (currLine->Y >= maxY) { continue; }
@@ -341,10 +367,17 @@ static int update(void* userdata)
 
 	}
 
+
+	// Draw the palm in separate loop (overlap - only ones in "front")
+	maxY = height * 2;
 	for (int j = startPos; j < 200 + startPos; j++) {
 
 		// Get line
 		currLine = &road[j % ROAD_LENGTH];
+
+		// Ignore "Too high lines"
+		if (currLine->Y >= maxY) { continue; }
+		maxY = currLine->Y;
 
 		// Draw sprite (if exists)
 		drawSprite(pd, currLine);
