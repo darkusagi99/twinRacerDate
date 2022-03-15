@@ -21,11 +21,13 @@ LCDFont* font = NULL;
 #define CAR_SPEED 250
 #define CAR_STRAFE 20
 #define BASE_HEIGHT 1200
+#define SEGMENT_SIZE 200
+#define ROAD_WIDTH 800
+#define ROAD_SIZE ROAD_LENGTH*SEGMENT_SIZE
 
 int width = 400;
 int height = 240;
 
-int roadW = 800;
 int segL = 200;
 float camD = 0.84f;
 
@@ -141,11 +143,19 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 // Projection world to screen
 void projectionLine(struct Line* line , int camX, int camY, int camZ) {
 
-	line->scale = fabs(camD / (line->z - camZ));
+	float zTmp;
+	if(line->z < camZ) {
+		zTmp = ROAD_SIZE + line->z - camZ;
+	}
+	else {
+		zTmp = line->z - camZ;
+	}
+
+	line->scale = fabs(camD / zTmp);
 	if (isinf(line->scale)) { line->scale = 1; }
 	line->X = (1 + line->scale * (line->x - camX)) * width / 2;
 	line->Y = (1 - line->scale * (line->y - camY)) * height / 2;
-	line->W = line->scale * roadW * width / 2;
+	line->W = line->scale * ROAD_WIDTH * width / 2;
 
 }
 
@@ -214,7 +224,7 @@ void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
 
 
 	// Draw sprite
-	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
+	pd->graphics->setDrawMode(kDrawModeNXOR);
 	float xscale = destW / w;
 	float yscale = destH / h;
 	pd->graphics->drawScaledBitmap(currLine->spriteLine, destX, destY, destW / w, destH / h);
@@ -276,8 +286,7 @@ static int update(void* userdata)
 	
 	pd->graphics->clear(kColorWhite);
 
-	while (posZ >= ROAD_LENGTH * segL) { posZ -= ROAD_LENGTH * segL; }
-	while (posZ < 0) { posZ += ROAD_LENGTH * segL; }
+	while (posZ >= ROAD_LENGTH * segL) { posZ = posZ % ROAD_SIZE; }
 
 	int startPos = posZ / segL;
 	int prevPos = (ROAD_LENGTH + startPos - 1) % ROAD_LENGTH;
@@ -336,6 +345,15 @@ static int update(void* userdata)
 
 		// Road Element
 		drawWedge(pd, roadColor, prevLine->X, prevLine->Y, prevLine->W, currLine->X, currLine->Y, currLine->W);
+
+		prevLine = currLine;
+
+	}
+
+	for (int j = startPos; j < 200 + startPos; j++) {
+
+		// Get line
+		currLine = &road[j % ROAD_LENGTH];
 
 		// Draw sprite (if exists)
 		drawSprite(pd, currLine);
