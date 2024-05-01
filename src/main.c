@@ -105,10 +105,10 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 			road[i].z = i * segL;
 			road[i].scale = 1;
 
-			// Ligne droite par défaut
+			// Ligne droite par dï¿½faut
 			road[i].curve = 0;
 
-			// Définition d'un virage
+			// Dï¿½finition d'un virage
 			if (i > 400 && i < 800) { road[i].curve = 1; }
 
 			// Up and down road position
@@ -343,14 +343,14 @@ static int update(void* userdata)
 
 		// Choose line color
 		if ((j / 3) % 2) {
-			grassColor = grassLight;
+			grassColor = (LCDColor) grassLight;
 			rumbleColor = rumbleLight;
-			roadColor = roadLight;
+			roadColor = (LCDColor) roadLight;
 		}
 		else {
-			grassColor = grassDark;
-			rumbleColor = rumbleDark;
-			roadColor = roadDark;
+			grassColor = (LCDColor) grassDark;
+			rumbleColor = (LCDColor) rumbleDark;
+			roadColor = (LCDColor) roadDark;
 		}
 
 		// Draw road part
