@@ -367,4 +367,6 @@ FodyWeavers.xsd
 /twinRacer.pdx/image/decor.pdi
 /twinRacer.pdx/image/sky.pdi
 *.pdi
+*.pdx
 /cmake-build-debug/
+/cmake-build-device/*

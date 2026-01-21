@@ -323,8 +323,8 @@ static int update(void* userdata)
 	carX -= speed * road[currentSeg].curve * 0.1f;
 	
 	// Timer and Score
+	timer--;
 	if (speed > 0) {
-		timer--;
 		score += (int)(speed / 10);
 	}
 	if (timer <= 0) {
@@ -451,7 +451,7 @@ static int update(void* userdata)
 	pd->graphics->drawBitmap(carDisplay2Bitmap, 160, 154, kBitmapUnflipped);
         
 	// HUD
-	pd->graphics->setDrawMode(kDrawModeFillWhite);
+	pd->graphics->setDrawMode(kDrawModeNXOR);
 	pd->graphics->setFont(font);
 	char hudStr[64];
 	sprintf(hudStr, "Speed: %d km/h", (int)(speed * 0.8f));
@@ -463,8 +463,6 @@ static int update(void* userdata)
 	sprintf(hudStr, "Score: %d", score);
 	pd->graphics->drawText(hudStr, strlen(hudStr), kASCIIEncoding, 10, 10);
 
-	// Draw FPS
-	pd->system->drawFPS(370,0);
 
 	return 1;
 }
