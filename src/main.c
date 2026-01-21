@@ -22,12 +22,13 @@ LCDFont* font = NULL;
 #define ACCEL 5
 #define BREAKING 10
 #define DECEL 2
-#define OFFROAD_DECEL 5
+#define OFFROAD_DECEL 15
 #define CAR_STRAFE 20
 #define BASE_HEIGHT 1200
 #define SEGMENT_SIZE 200
 #define ROAD_WIDTH 1000
 #define ROAD_SIZE ROAD_LENGTH*SEGMENT_SIZE
+#define SCREEN_WIDTH 400
 
 int width = 400;
 int height = 240;
@@ -253,11 +254,13 @@ static int update(void* userdata)
 		pd->graphics->clear(kColorBlack);
 		pd->graphics->setFont(font);
 		pd->graphics->setDrawMode(kDrawModeFillWhite);
-		pd->graphics->drawText("GAME OVER", 9, kASCIIEncoding, 150, 100);
 		char scoreStr[32];
 		sprintf(scoreStr, "Score: %d", score);
-		pd->graphics->drawText(scoreStr, strlen(scoreStr), kASCIIEncoding, 150, 130);
-		pd->graphics->drawText("Press A to Restart", 18, kASCIIEncoding, 120, 160);
+
+		pd->graphics->drawTextInRect("GAME OVER", 9, kASCIIEncoding, 0, 80, SCREEN_WIDTH, 40, kWrapWord, kAlignTextCenter);
+		pd->graphics->drawTextInRect(scoreStr, strlen(scoreStr), kASCIIEncoding, 0, 110, SCREEN_WIDTH, 40, kWrapWord, kAlignTextCenter);
+		pd->graphics->drawTextInRect("Press A to Restart", 18, kASCIIEncoding, 0, 140, SCREEN_WIDTH, 40, kWrapWord, kAlignTextCenter);
+
 		
 		pd->system->getButtonState(&currentBtn, &pushedBtn, &releasedBtn);
 		if (pushedBtn & kButtonA) {
