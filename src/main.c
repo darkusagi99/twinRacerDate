@@ -287,7 +287,7 @@ static int update(void* userdata)
 
 	// Offroad slowdown
 	if (carX < -ROAD_WIDTH || carX > ROAD_WIDTH) {
-		if (speed > 100) speed -= OFFROAD_DECEL;
+		if (speed > 50) speed -= OFFROAD_DECEL;
 	}
 
 	if (speed < 0) speed = 0;
@@ -295,13 +295,13 @@ static int update(void* userdata)
 
 	// Left / right
 	if (currentBtn & kButtonLeft) { 
-		carX -= CAR_STRAFE * (speed / MAX_SPEED); 
+		carX -= CAR_STRAFE + (CAR_STRAFE * (speed / MAX_SPEED));
 
 		carDisplayBitmap = carLeftBitmap;
 		carDisplay2Bitmap = carLeft2Bitmap;
 	}
 	else if (currentBtn & kButtonRight) { 
-		carX += CAR_STRAFE * (speed / MAX_SPEED);
+		carX += CAR_STRAFE + (CAR_STRAFE * (speed / MAX_SPEED));
 
 		carDisplayBitmap = carRightBitmap;
 		carDisplay2Bitmap = carRight2Bitmap;
@@ -314,6 +314,10 @@ static int update(void* userdata)
 
 	// Make the car go forward
 	posZ += speed;
+
+	// Centrifugal force in curves
+	int currentSeg = (posZ / segL) % ROAD_LENGTH;
+	carX -= speed * road[currentSeg].curve * 0.1f;
 	
 	// Timer and Score
 	if (speed > 0) {
@@ -447,7 +451,7 @@ static int update(void* userdata)
 	pd->graphics->setDrawMode(kDrawModeFillWhite);
 	pd->graphics->setFont(font);
 	char hudStr[64];
-	sprintf(hudStr, "Speed: %d km/h", (int)(speed * 0.6f));
+	sprintf(hudStr, "Speed: %d km/h", (int)(speed * 0.8f));
 	pd->graphics->drawText(hudStr, strlen(hudStr), kASCIIEncoding, 10, 210);
 	
 	sprintf(hudStr, "Time: %d", timer / 60);
