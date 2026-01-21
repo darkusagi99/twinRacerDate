@@ -3,3 +3,4 @@ author=Darkusagi99
 description=A C Playdate Car game
 bundleID=com.github.com.darkusagi99.twinRacerDate
 imagePath=card/
+version=0.8

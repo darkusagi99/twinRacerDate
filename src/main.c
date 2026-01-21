@@ -18,11 +18,15 @@ LCDFont* font = NULL;
 
 #define POLY_PTS 4
 #define ROAD_LENGTH 1600
-#define CAR_SPEED 250
+#define MAX_SPEED 300
+#define ACCEL 5
+#define BREAKING 10
+#define DECEL 2
+#define OFFROAD_DECEL 5
 #define CAR_STRAFE 20
 #define BASE_HEIGHT 1200
 #define SEGMENT_SIZE 200
-#define ROAD_WIDTH 800
+#define ROAD_WIDTH 1000
 #define ROAD_SIZE ROAD_LENGTH*SEGMENT_SIZE
 
 int width = 400;
@@ -30,6 +34,14 @@ int height = 240;
 
 int segL = 200;
 float camD = 0.84f;
+
+float speed = 0;
+float carX = 0;
+int posZ = 0;
+int driving = 0;
+int timer = 60 * 30; // 30 seconds at 60fps
+int score = 0;
+int gameOver = 0;
 
 struct Line {
 	float x, y, z; // center of line
@@ -150,7 +162,7 @@ void projectionLine(struct Line* line , int camX, int camY, int camZ) {
 		zTmp = line->z - camZ;
 	}
 
-	line->scale = fabs(camD / zTmp);
+	line->scale = fabsf(camD / zTmp);
 	if (isinf(line->scale)) { line->scale = 1; }
 	line->X = (1 + line->scale * (line->x - camX)) * width / 2;
 	line->Y = (1 - line->scale * (line->y - camY)) * height / 2;
@@ -215,17 +227,10 @@ void drawSprite(PlaydateAPI* pd, struct Line* currLine) {
 
 	// Draw sprite
 	pd->graphics->setDrawMode(kDrawModeWhiteTransparent);
-	float xscale = destW / w;
-	float yscale = destH / h;
 	pd->graphics->drawScaledBitmap(currLine->spriteLine, destX, destY, destW / w, destH / h);
 
 
 }
-
-// Car Z position
-int posZ = 0;
-int posX = 0;
-int driving = 0;
 
 // Button states
 PDButtons pushedBtn;
@@ -244,36 +249,81 @@ static int update(void* userdata)
 {
 	PlaydateAPI* pd = userdata;
 
+	if (gameOver) {
+		pd->graphics->clear(kColorBlack);
+		pd->graphics->setFont(font);
+		pd->graphics->setDrawMode(kDrawModeFillWhite);
+		pd->graphics->drawText("GAME OVER", 9, kASCIIEncoding, 150, 100);
+		char scoreStr[32];
+		sprintf(scoreStr, "Score: %d", score);
+		pd->graphics->drawText(scoreStr, strlen(scoreStr), kASCIIEncoding, 150, 130);
+		pd->graphics->drawText("Press A to Restart", 18, kASCIIEncoding, 120, 160);
+		
+		pd->system->getButtonState(&currentBtn, &pushedBtn, &releasedBtn);
+		if (pushedBtn & kButtonA) {
+			gameOver = 0;
+			speed = 0;
+			posZ = 0;
+			carX = 0;
+			timer = 60 * 30;
+			score = 0;
+		}
+		return 1;
+	}
+
 	// Read input
 	pd->system->getButtonState(&currentBtn, &pushedBtn, &releasedBtn);
 
 	// Read A button
-	if (pushedBtn & kButtonA) { driving = 1; }
-	if (releasedBtn & kButtonA) { driving = 0; }
+	if (currentBtn & kButtonA) { 
+		speed += ACCEL; 
+	} else {
+		speed -= DECEL;
+	}
+
+	if (currentBtn & kButtonB) {
+		speed -= BREAKING;
+	}
+
+	// Offroad slowdown
+	if (carX < -ROAD_WIDTH || carX > ROAD_WIDTH) {
+		if (speed > 100) speed -= OFFROAD_DECEL;
+	}
+
+	if (speed < 0) speed = 0;
+	if (speed > MAX_SPEED) speed = MAX_SPEED;
 
 	// Left / right
 	if (currentBtn & kButtonLeft) { 
-		posX -= CAR_STRAFE; 
+		carX -= CAR_STRAFE * (speed / MAX_SPEED); 
 
 		carDisplayBitmap = carLeftBitmap;
 		carDisplay2Bitmap = carLeft2Bitmap;
 	}
-	if (currentBtn & kButtonRight) { 
-		posX += CAR_STRAFE;
+	else if (currentBtn & kButtonRight) { 
+		carX += CAR_STRAFE * (speed / MAX_SPEED);
 
 		carDisplayBitmap = carRightBitmap;
 		carDisplay2Bitmap = carRight2Bitmap;
 	}
-
-
-	if ((releasedBtn & kButtonRight) || (releasedBtn & kButtonLeft)) {
+	else {
 		carDisplayBitmap = carBitmap;
 		carDisplay2Bitmap = car2Bitmap;
 	}
 
+
 	// Make the car go forward
-	if (driving) { posZ += CAR_SPEED; }
+	posZ += speed;
 	
+	// Timer and Score
+	if (speed > 0) {
+		timer--;
+		score += (int)(speed / 10);
+	}
+	if (timer <= 0) {
+		gameOver = 1;
+	}
+
 	pd->graphics->clear(kColorWhite);
 
 	while (posZ >= ROAD_LENGTH * segL) { posZ = posZ % ROAD_SIZE; }
@@ -285,15 +335,15 @@ static int update(void* userdata)
 
 	// Draw decor
 	pd->graphics->setDrawMode(kDrawModeCopy);
-	pd->graphics->drawBitmap(decorBitmap, posX/200, 0, kBitmapUnflipped);
+	pd->graphics->drawBitmap(decorBitmap, (int)carX/20, 0, kBitmapUnflipped);
 
 	// Draw road
 	prevLine = &road[prevPos];
-	projectionLine(prevLine, posX, camH, posZ);
+	projectionLine(prevLine, (int)carX, camH, posZ);
 
 
 	currLine = &road[startPos];
-	projectionLine(currLine, posX - x, camH, posZ);
+	projectionLine(currLine, (int)carX - x, camH, posZ);
 
 	// Camera Height
 	camH = BASE_HEIGHT + currLine->y;
@@ -307,7 +357,7 @@ static int update(void* userdata)
 		currLine = &road[j % ROAD_LENGTH];
 
 		// Calculate screen coordinates
-		projectionLine(currLine, posX - x, camH, posZ);
+		projectionLine(currLine, (int)carX - x, camH, posZ);
 		x += dx;
 		dx += currLine->curve;
 
@@ -358,10 +408,10 @@ static int update(void* userdata)
 		drawWedge(pd, grassColor, 0, prevLine->Y, width, 0, currLine->Y, width);
 
 		// Rumble element
-		drawWedge(pd, rumbleColor, prevLine->X, prevLine->Y, prevLine->W * 1.2, currLine->X, currLine->Y, currLine->W * 1.2);
+		drawWedge(pd, rumbleColor, prevLine->X, prevLine->Y, (int)(prevLine->W * 1.2f), currLine->X, currLine->Y, (int)(currLine->W * 1.2f));
 
 		// Road Element
-		drawWedge(pd, roadColor, prevLine->X, prevLine->Y, prevLine->W, currLine->X, currLine->Y, currLine->W);
+		drawWedge(pd, roadColor, prevLine->X, prevLine->Y, (int)prevLine->W, currLine->X, currLine->Y, (int)currLine->W);
 
 		prevLine = currLine;
 
@@ -393,8 +443,21 @@ static int update(void* userdata)
 	pd->graphics->setDrawMode(kDrawModeBlackTransparent);
 	pd->graphics->drawBitmap(carDisplay2Bitmap, 160, 154, kBitmapUnflipped);
         
+	// HUD
+	pd->graphics->setDrawMode(kDrawModeFillWhite);
+	pd->graphics->setFont(font);
+	char hudStr[64];
+	sprintf(hudStr, "Speed: %d km/h", (int)(speed * 0.6f));
+	pd->graphics->drawText(hudStr, strlen(hudStr), kASCIIEncoding, 10, 210);
+	
+	sprintf(hudStr, "Time: %d", timer / 60);
+	pd->graphics->drawText(hudStr, strlen(hudStr), kASCIIEncoding, 320, 210);
+
+	sprintf(hudStr, "Score: %d", score);
+	pd->graphics->drawText(hudStr, strlen(hudStr), kASCIIEncoding, 10, 10);
+
 	// Draw FPS
-	pd->system->drawFPS(0,0);
+	pd->system->drawFPS(370,0);
 
 	return 1;
 }
