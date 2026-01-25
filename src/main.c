@@ -88,7 +88,7 @@ void generate_road_data(void) {
 	// Init road Data
 	for (int i = 0; i < ROAD_LENGTH/ROAD_PART_LENGTH; i++) {
 
-		int curveVal = ((rand() % 50) - 25) / 25;
+		int curveVal = rand() % 2;
 		int hasCurve = rand() % 100;
 
 		int hasUpDown = rand() % 100;
@@ -104,7 +104,13 @@ void generate_road_data(void) {
 			// Ligne droite par d�faut
 			road[idx].curve = 0;
 			// 20% change of curve
-			if (hasCurve > 80) { road[idx].curve = curveVal; }
+			if (hasCurve > 60) {
+				if (curveVal) {
+					road[idx].curve = -1;
+				} else {
+					road[idx].curve = 1;
+				}
+			}
 
 			// Up and down road position
 			if (hasUpDown > 90) { road[idx].y = sin(idx / 30.0) * BASE_HEIGHT; }
@@ -113,7 +119,7 @@ void generate_road_data(void) {
 			road[idx].spritePos = 0;
 			road[idx].spriteLine = NULL;
 
-			// Tree on the
+			// Tree near the track border
 			if ((hasPalm > 30) && (idx % 20 == 0)) {
 				road[idx].spritePos = -1.5;
 				road[idx].spriteLine = palmBitmap;
