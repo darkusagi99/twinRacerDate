@@ -12,12 +12,16 @@
 
 #include "pd_api.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static int update(void* userdata);
 const char* fontpath = "/System/Fonts/Asheville-Sans-14-Bold.pft";
 LCDFont* font = NULL;
 
 #define POLY_PTS 4
-#define ROAD_LENGTH 1600
+#define ROAD_LENGTH 3000
 #define ROAD_PART_LENGTH 50
 #define MAX_SPEED 300
 #define ACCEL 5
@@ -86,34 +90,41 @@ __declspec(dllexport)
 #endif
 void generate_road_data(void) {
 	// Init road Data
-	for (int i = 0; i < ROAD_LENGTH/ROAD_PART_LENGTH; i++) {
+	float currentCurve = 0;
+	float currentY = 0;
+	float targetCurve = 0;
+	float targetY = 0;
 
-		int curveVal = rand() % 2;
-		int hasCurve = rand() % 100;
+	for (int i = 0; i < ROAD_LENGTH / ROAD_PART_LENGTH; i++) {
 
-		int hasUpDown = rand() % 100;
+		// Randomize targets for this segment
+		int curveType = rand() % 100;
+		int curveTypeSide = rand() % 2;
+		if (curveType < 50) targetCurve = 0;
+		else if (curveTypeSide == 1) targetCurve = -1;
+		else targetCurve = 1;
+
+		int hillType = rand() % 100;
+		int hillTypeSide = rand() % 2;
+		if (hillType < 70) targetY = 0;
+		else if (hillTypeSide == 1) targetY = BASE_HEIGHT * (1.0 + (rand() % 100) / 100.0);
+		else targetY = -BASE_HEIGHT * (1.0 + (rand() % 100) / 100.0);
+
 		int hasPalm = rand() % 100;
 
 		for (int j = 0; j < ROAD_PART_LENGTH; j++) {
-			int idx = (i*ROAD_PART_LENGTH)+j;
+			int idx = (i * ROAD_PART_LENGTH) + j;
+
 			road[idx].x = 0;
-			road[idx].y = 0;
 			road[idx].z = idx * segL;
 			road[idx].scale = 1;
 
-			// Ligne droite par d�faut
-			road[idx].curve = 0;
-			// 20% change of curve
-			if (hasCurve > 60) {
-				if (curveVal) {
-					road[idx].curve = -1;
-				} else {
-					road[idx].curve = 1;
-				}
-			}
+			// Smooth transition using cosine interpolation
+			float t = (float)j / (float)ROAD_PART_LENGTH;
+			float tt = (1.0f - cosf(t * (float)M_PI)) / 2.0f;
 
-			// Up and down road position
-			if (hasUpDown > 90) { road[idx].y = sin(idx / 30.0) * BASE_HEIGHT; }
+			road[idx].curve = currentCurve + (targetCurve - currentCurve) * tt;
+			road[idx].y = currentY + (targetY - currentY) * tt;
 
 			// Add sprite data
 			road[idx].spritePos = 0;
@@ -121,14 +132,15 @@ void generate_road_data(void) {
 
 			// Tree near the track border
 			if ((hasPalm > 30) && (idx % 20 == 0)) {
-				road[idx].spritePos = -1.5;
+				road[idx].spritePos = (rand() % 2 == 0) ? -1.5 : 1.5;
 				road[idx].spriteLine = palmBitmap;
 			}
 
 			road[idx].X = 200;
 			road[idx].Y = 240;
 		}
-
+		currentCurve = targetCurve;
+		currentY = targetY;
 	}
 }
 
