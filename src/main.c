@@ -18,6 +18,7 @@ LCDFont* font = NULL;
 
 #define POLY_PTS 4
 #define ROAD_LENGTH 1600
+#define ROAD_PART_LENGTH 50
 #define MAX_SPEED 300
 #define ACCEL 5
 #define BREAKING 10
@@ -85,34 +86,42 @@ __declspec(dllexport)
 #endif
 void generate_road_data(void) {
 	// Init road Data
-	for (int i = 0; i < ROAD_LENGTH; i++) {
+	for (int i = 0; i < ROAD_LENGTH/ROAD_PART_LENGTH; i++) {
 
-		road[i].x = 0;
-		road[i].y = 0;
-		road[i].z = i * segL;
-		road[i].scale = 1;
+		int curveVal = ((rand() % 50) - 25) / 25;
+		int hasCurve = rand() % 100;
 
-		// Ligne droite par d�faut
-		road[i].curve = 0;
+		int hasUpDown = rand() % 100;
+		int hasPalm = rand() % 100;
 
-		// D�finition d'un virage
-		if (i > 400 && i < 800) { road[i].curve = 1; }
+		for (int j = 0; j < ROAD_PART_LENGTH; j++) {
+			int idx = (i*ROAD_PART_LENGTH)+j;
+			road[idx].x = 0;
+			road[idx].y = 0;
+			road[idx].z = idx * segL;
+			road[idx].scale = 1;
 
-		// Up and down road position
-		if (i > 940) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
+			// Ligne droite par d�faut
+			road[idx].curve = 0;
+			// 20% change of curve
+			if (hasCurve > 80) { road[idx].curve = curveVal; }
 
-		// Add sprite data
-		road[i].spritePos = 0;
-		road[i].spriteLine = NULL;
+			// Up and down road position
+			if (hasUpDown > 90) { road[idx].y = sin(idx / 30.0) * BASE_HEIGHT; }
 
-		// Tree on the
-		if (i % 20 == 0) {
-			road[i].spritePos = -1.5;
-			road[i].spriteLine = palmBitmap;
+			// Add sprite data
+			road[idx].spritePos = 0;
+			road[idx].spriteLine = NULL;
+
+			// Tree on the
+			if ((hasPalm > 30) && (idx % 20 == 0)) {
+				road[idx].spritePos = -1.5;
+				road[idx].spriteLine = palmBitmap;
+			}
+
+			road[idx].X = 200;
+			road[idx].Y = 240;
 		}
-
-		road[i].X = 200;
-		road[i].Y = 240;
 
 	}
 }
@@ -274,6 +283,7 @@ static int update(void* userdata)
 			carX = 0;
 			timer = 60 * 30;
 			score = 0;
+			generate_road_data();
 		}
 		return 1;
 	}
