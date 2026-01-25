@@ -83,6 +83,40 @@ LCDBitmap* loadImageAtPath(const char* path, PlaydateAPI* pd)
 #ifdef _WINDLL
 __declspec(dllexport)
 #endif
+void generate_road_data(void) {
+	// Init road Data
+	for (int i = 0; i < ROAD_LENGTH; i++) {
+
+		road[i].x = 0;
+		road[i].y = 0;
+		road[i].z = i * segL;
+		road[i].scale = 1;
+
+		// Ligne droite par d�faut
+		road[i].curve = 0;
+
+		// D�finition d'un virage
+		if (i > 400 && i < 800) { road[i].curve = 1; }
+
+		// Up and down road position
+		if (i > 940) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
+
+		// Add sprite data
+		road[i].spritePos = 0;
+		road[i].spriteLine = NULL;
+
+		// Tree on the
+		if (i % 20 == 0) {
+			road[i].spritePos = -1.5;
+			road[i].spriteLine = palmBitmap;
+		}
+
+		road[i].X = 200;
+		road[i].Y = 240;
+
+	}
+}
+
 int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 {
 	(void)arg; // arg is currently only used for event = kEventKeyPressed
@@ -110,37 +144,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 		carDisplayBitmap = carBitmap;
 		carDisplay2Bitmap = car2Bitmap;
 
-		// Init road Data
-		for (int i = 0; i < ROAD_LENGTH; i++) {
-
-			road[i].x = 0;
-			road[i].y = 0;
-			road[i].z = i * segL;
-			road[i].scale = 1;
-
-			// Ligne droite par d�faut
-			road[i].curve = 0;
-
-			// D�finition d'un virage
-			if (i > 400 && i < 800) { road[i].curve = 1; }
-
-			// Up and down road position
-			if (i > 940) { road[i].y = sin(i / 30.0) * BASE_HEIGHT; }
-
-			// Add sprite data
-			road[i].spritePos = 0;
-			road[i].spriteLine = NULL;
-
-			// Tree on the
-			if (i % 20 == 0) {
-				road[i].spritePos = -1.5;
-				road[i].spriteLine = palmBitmap;
-			}
-
-			road[i].X = 200;
-			road[i].Y = 240;
-
-		}
+		generate_road_data();
 
 
 		// Note: If you set an update callback in the kEventInit handler, the system assumes the game is pure C and doesn't run any Lua code in the game
